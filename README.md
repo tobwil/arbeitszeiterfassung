@@ -22,7 +22,7 @@ Ein einfaches und benutzerfreundliches Arbeitszeiterfassungstool für den Browse
 1. **Repository klonen oder herunterladen**:
 
    ```bash
-   git clone https://github.com/IhrBenutzername/arbeitszeiterfassung.git
+   git clone https://github.com/tobwil/arbeitszeiterfassung.git
 2. **Dateien öffnen**:
 
 Öffnen Sie die Datei `index.html` in Ihrem bevorzugten Browser.
