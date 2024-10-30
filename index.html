@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Arbeitszeiterfassung</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        /* CSS für das Design */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f6f8;
+            margin: 0;
+            padding: 0;
+        }
+        #container {
+            max-width: 800px;
+            margin: 20px auto;
+            background-color: #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            padding: 20px;
+            border-radius: 8px;
+        }
+        h1, h2, h3 {
+            text-align: center;
+            color: #333;
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+        #timeForm {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        #timeForm div {
+            display: flex;
+            flex-direction: column;
+        }
+        #timeForm label {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        #timeForm input {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        #timeForm button {
+            grid-column: 1 / -1;
+            padding: 12px;
+            background-color: #007bff;
+            border: none;
+            color: #fff;
+            font-size: 18px;
+            margin-top: 10px;
+            cursor: pointer;
+            border-radius: 4px;
+            width: 100%;
+        }
+        #timeForm button:hover {
+            background-color: #0056b3;
+        }
+        #summary {
+            margin-top: 30px;
+        }
+        /* Tabelle responsive machen */
+        .table-responsive {
+            overflow-x: auto;
+            background-color: #fff;
+            border-radius: 8px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 14px;
+            min-width: 600px; /* Mindestbreite für die Tabelle */
+        }
+        th, td {
+            padding: 10px 8px;
+            border: 1px solid #ddd;
+            text-align: center;
+            white-space: nowrap; /* Verhindert Zeilenumbrüche in Zellen */
+        }
+        th {
+            background-color: #007bff;
+            color: #fff;
+        }
+        tr:nth-child(even) {
+            background-color: #f9fafb;
+        }
+        .overview {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+        .overview div {
+            background-color: #f1f3f5;
+            padding: 15px;
+            border-radius: 4px;
+            width: 32%;
+            text-align: center;
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        .action-buttons button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px;
+            font-size: 20px;
+        }
+        .reset-button {
+            margin-top: 20px;
+            background-color: #dc3545;
+            border: none;
+            color: #fff;
+            font-size: 18px;
+            padding: 12px;
+            cursor: pointer;
+            border-radius: 4px;
+            width: 100%;
+        }
+        .reset-button:hover {
+            background-color: #c82333;
+        }
+        #shareSection {
+            margin-top: 30px;
+            text-align: center;
+        }
+        #shareSection input {
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        #shareSection button {
+            padding: 12px;
+            background-color: #28a745;
+            border: none;
+            color: #fff;
+            font-size: 18px;
+            cursor: pointer;
+            border-radius: 4px;
+            margin: 5px 2px;
+            width: 48%;
+        }
+        #shareSection button:hover {
+            background-color: #218838;
+        }
+        /* Responsive Design */
+        @media (max-width: 600px) {
+            #timeForm {
+                grid-template-columns: 1fr;
+            }
+            .overview div {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+            #shareSection button {
+                width: 100%;
+                margin: 5px 0;
+            }
+            table {
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div id="container">
+    <h1>Arbeitszeiterfassung</h1>
+
+    <div id="timeEntry">
+        <h2>Arbeitszeit eingeben</h2>
+        <form id="timeForm">
+            <div>
+                <label for="date">Datum:</label>
+                <input type="date" id="date" required>
+            </div>
+            <div>
+                <label for="startTime">Von:</label>
+                <input type="time" id="startTime" required>
+            </div>
+            <div>
+                <label for="endTime">Bis:</label>
+                <input type="time" id="endTime" required>
+            </div>
+            <div>
+                <label for="breakTime">Pause (Min):</label>
+                <input type="number" id="breakTime" required min="0">
+            </div>
+            <div>
+                <button type="submit">Hinzufügen</button>
+            </div>
+        </form>
+    </div>
+
+    <div id="summary">
+        <h2>Übersicht</h2>
+        <div class="overview">
+            <div>Woche: <span id="weeklyHours">0</span> Std</div>
+            <div>Monat: <span id="monthlyHours">0</span> Std</div>
+            <div>Jahr: <span id="yearlyHours">0</span> Std</div>
+        </div>
+
+        <!-- Tabelle in einem responsiven Container -->
+        <div class="table-responsive">
+            <table id="timeTable">
+                <thead>
+                    <tr>
+                        <th>Datum</th>
+                        <th>Von</th>
+                        <th>Bis</th>
+                        <th>Pause</th>
+                        <th>Arbeitszeit</th>
+                        <th>Aktionen</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Einträge werden hier hinzugefügt -->
+                </tbody>
+            </table>
+        </div>
+
+        <h3>Arbeitsstunden nach Kalenderwoche</h3>
+        <div class="table-responsive">
+            <table id="weeklySummaryTable">
+                <thead>
+                    <tr>
+                        <th>Kalenderwoche</th>
+                        <th>Arbeitszeit (Std)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Wöchentliche Zusammenfassung -->
+                </tbody>
+            </table>
+        </div>
+
+        <h3>Arbeitsstunden nach Monat</h3>
+        <div class="table-responsive">
+            <table id="monthlySummaryTable">
+                <thead>
+                    <tr>
+                        <th>Monat</th>
+                        <th>Arbeitszeit (Std)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Monatliche Zusammenfassung -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Share Section -->
+    <div id="shareSection">
+        <h2>Zeitraum auswählen und teilen 📤</h2>
+        <div>
+            <label for="fromDate">Von:</label>
+            <input type="date" id="fromDate">
+        </div>
+        <div>
+            <label for="toDate">Bis:</label>
+            <input type="date" id="toDate">
+        </div>
+        <button onclick="shareEntries('email')">Per E-Mail teilen</button>
+        <button onclick="shareEntries('whatsapp')">Per WhatsApp teilen</button>
+        <!-- PDF-Export entfernt -->
+    </div>
+
+    <!-- Reset Button -->
+    <button class="reset-button" onclick="resetAllEntries()">Alle Einträge zurücksetzen</button>
+
+</div>
+
+<script>
+    // Arbeitszeiten werden in diesem Array gespeichert
+    let timeEntries = [];
+
+    // Einträge aus dem lokalen Speicher laden
+    window.onload = function() {
+        loadEntriesFromLocalStorage();
+    };
+
+    function loadEntriesFromLocalStorage() {
+        const storedEntries = localStorage.getItem('timeEntries');
+        if (storedEntries) {
+            timeEntries = JSON.parse(storedEntries);
+            // Sortieren der Einträge nach Datum (neueste zuerst)
+            timeEntries.sort((a, b) => new Date(b.date) - new Date(a.date));
+            rebuildTimeTable();
+            updateOverviews();
+        }
+    }
+
+    function saveEntriesToLocalStorage() {
+        localStorage.setItem('timeEntries', JSON.stringify(timeEntries));
+    }
+
+    // Funktion zum Hinzufügen einer neuen Arbeitszeit
+    document.getElementById('timeForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        let date = document.getElementById('date').value;
+        let startTime = document.getElementById('startTime').value;
+        let endTime = document.getElementById('endTime').value;
+        let breakTime = parseInt(document.getElementById('breakTime').value);
+
+        let start = new Date(date + 'T' + startTime);
+        let end = new Date(date + 'T' + endTime);
+
+        let diff = (end - start) / (1000 * 60); // Differenz in Minuten
+        let workMinutes = diff - breakTime;
+        let workHours = workMinutes / 60;
+
+        if (workHours < 0) {
+            alert('Die eingegebene Arbeitszeit ergibt eine negative Dauer. Bitte überprüfen Sie Ihre Eingaben.');
+            return;
+        }
+
+        // Eintrag zum Array hinzufügen
+        let entry = {
+            id: Date.now(), // Eindeutige ID
+            date: date,
+            startTime: startTime,
+            endTime: endTime,
+            breakTime: breakTime,
+            workHours: workHours
+        };
+        timeEntries.push(entry);
+
+        // Sortieren der Einträge nach Datum (neueste zuerst)
+        timeEntries.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        // Tabelle neu aufbauen
+        rebuildTimeTable();
+
+        // Übersichten aktualisieren
+        updateOverviews();
+
+        // Einträge speichern
+        saveEntriesToLocalStorage();
+
+        // Felder zurücksetzen
+        document.getElementById('timeForm').reset();
+    });
+
+    function rebuildTimeTable() {
+        let tbody = document.getElementById('timeTable').getElementsByTagName('tbody')[0];
+        tbody.innerHTML = '';
+        timeEntries.forEach(entry => {
+            addEntryToTable(entry);
+        });
+    }
+
+    function addEntryToTable(entry) {
+        let tbody = document.getElementById('timeTable').getElementsByTagName('tbody')[0];
+        let newRow = tbody.insertRow();
+
+        newRow.insertCell(0).innerText = entry.date;
+        newRow.insertCell(1).innerText = entry.startTime;
+        newRow.insertCell(2).innerText = entry.endTime;
+        newRow.insertCell(3).innerText = entry.breakTime;
+        newRow.insertCell(4).innerText = entry.workHours.toFixed(2);
+
+        // Aktionen (Bearbeiten, Löschen)
+        let actionCell = newRow.insertCell(5);
+        actionCell.classList.add('action-buttons');
+
+        // Bearbeiten-Button
+        let editButton = document.createElement('button');
+        editButton.innerHTML = '🖋️';
+        editButton.title = 'Bearbeiten';
+        editButton.onclick = () => editEntry(entry.id);
+
+        // Löschen-Button
+        let deleteButton = document.createElement('button');
+        deleteButton.innerHTML = '🗑️';
+        deleteButton.title = 'Löschen';
+        deleteButton.onclick = () => deleteEntry(entry.id);
+
+        actionCell.appendChild(editButton);
+        actionCell.appendChild(deleteButton);
+
+        newRow.setAttribute('data-id', entry.id);
+    }
+
+    function updateOverviews() {
+        let weeklyHours = 0;
+        let monthlyHours = 0;
+        let yearlyHours = 0;
+
+        let now = new Date();
+        let currentWeek = getWeekNumber(now);
+        let currentMonth = now.getMonth();
+        let currentYear = now.getFullYear();
+
+        timeEntries.forEach(entry => {
+            let entryDate = new Date(entry.date);
+            if (getWeekNumber(entryDate) === currentWeek && entryDate.getFullYear() === currentYear) {
+                weeklyHours += entry.workHours;
+            }
+            if (entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear) {
+                monthlyHours += entry.workHours;
+            }
+            if (entryDate.getFullYear() === currentYear) {
+                yearlyHours += entry.workHours;
+            }
+        });
+
+        document.getElementById('weeklyHours').innerText = weeklyHours.toFixed(2);
+        document.getElementById('monthlyHours').innerText = monthlyHours.toFixed(2);
+        document.getElementById('yearlyHours').innerText = yearlyHours.toFixed(2);
+
+        computeAndRenderWeeklySummary();
+        computeAndRenderMonthlySummary();
+    }
+
+    // Funktion zur Bearbeitung eines Eintrags
+    function editEntry(id) {
+        let entry = timeEntries.find(e => e.id === id);
+        if (entry) {
+            // Formular mit den Daten füllen
+            document.getElementById('date').value = entry.date;
+            document.getElementById('startTime').value = entry.startTime;
+            document.getElementById('endTime').value = entry.endTime;
+            document.getElementById('breakTime').value = entry.breakTime;
+
+            // Eintrag aus der Tabelle und dem Array entfernen
+            deleteEntry(id, false);
+        }
+    }
+
+    // Funktion zum Löschen eines Eintrags
+    function deleteEntry(id, update = true) {
+        // Aus dem Array entfernen
+        timeEntries = timeEntries.filter(e => e.id !== id);
+
+        // Tabelle neu aufbauen
+        rebuildTimeTable();
+
+        // Einträge speichern
+        saveEntriesToLocalStorage();
+
+        if (update) {
+            // Übersichten aktualisieren
+            updateOverviews();
+        }
+    }
+
+    // Funktion zum Zurücksetzen aller Einträge
+    function resetAllEntries() {
+        if (confirm('Möchten Sie wirklich alle Einträge zurücksetzen?')) {
+            timeEntries = [];
+            saveEntriesToLocalStorage();
+            rebuildTimeTable();
+            updateOverviews();
+        }
+    }
+
+    // Funktion zur Berechnung und Darstellung der wöchentlichen Zusammenfassung
+    function computeAndRenderWeeklySummary() {
+        let weeklyTotals = {};
+        timeEntries.forEach(entry => {
+            let entryDate = new Date(entry.date);
+            let weekNumber = getWeekNumber(entryDate);
+            let year = entryDate.getFullYear();
+            let key = 'KW ' + weekNumber + ' (' + year + ')';
+            if (!weeklyTotals[key]) {
+                weeklyTotals[key] = 0;
+            }
+            weeklyTotals[key] += entry.workHours;
+        });
+
+        // Sortieren nach Kalenderwoche (neueste zuerst)
+        let sortedWeeks = Object.keys(weeklyTotals).sort((a, b) => {
+            let [aWeek, aYear] = a.match(/KW (\d+) \((\d+)\)/).slice(1).map(Number);
+            let [bWeek, bYear] = b.match(/KW (\d+) \((\d+)\)/).slice(1).map(Number);
+            let aDate = new Date(aYear, 0, (aWeek - 1) * 7);
+            let bDate = new Date(bYear, 0, (bWeek - 1) * 7);
+            return bDate - aDate;
+        });
+
+        let tbody = document.getElementById('weeklySummaryTable').getElementsByTagName('tbody')[0];
+        tbody.innerHTML = '';
+        for (let key of sortedWeeks) {
+            let newRow = tbody.insertRow();
+            newRow.insertCell(0).innerText = key;
+            newRow.insertCell(1).innerText = weeklyTotals[key].toFixed(2);
+        }
+    }
+
+    // Funktion zur Berechnung und Darstellung der monatlichen Zusammenfassung
+    function computeAndRenderMonthlySummary() {
+        let monthlyTotals = {};
+        timeEntries.forEach(entry => {
+            let entryDate = new Date(entry.date);
+            let month = entryDate.getMonth();
+            let year = entryDate.getFullYear();
+            let monthName = getMonthName(month);
+            let key = monthName + ' ' + year;
+            if (!monthlyTotals[key]) {
+                monthlyTotals[key] = 0;
+            }
+            monthlyTotals[key] += entry.workHours;
+        });
+
+        // Sortieren nach Monat (neueste zuerst)
+        let sortedMonths = Object.keys(monthlyTotals).sort((a, b) => {
+            let [aMonthName, aYear] = a.split(' ');
+            let [bMonthName, bYear] = b.split(' ');
+            let aMonth = getMonthIndex(aMonthName);
+            let bMonth = getMonthIndex(bMonthName);
+            let aDate = new Date(parseInt(aYear), aMonth, 1);
+            let bDate = new Date(parseInt(bYear), bMonth, 1);
+            return bDate - aDate;
+        });
+
+        let tbody = document.getElementById('monthlySummaryTable').getElementsByTagName('tbody')[0];
+        tbody.innerHTML = '';
+        for (let key of sortedMonths) {
+            let newRow = tbody.insertRow();
+            newRow.insertCell(0).innerText = key;
+            newRow.insertCell(1).innerText = monthlyTotals[key].toFixed(2);
+        }
+    }
+
+    // Funktion zur Berechnung der Kalenderwoche
+    function getWeekNumber(d) {
+        d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+        let dayNum = d.getUTCDay() || 7;
+        d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+        let yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
+        return Math.ceil((((d - yearStart) / 86400000) + 1)/7);
+    }
+
+    // Funktion zur Umwandlung des Monatsindex in den Monatsnamen
+    function getMonthName(monthIndex) {
+        let monthNames = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
+                          'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+        return monthNames[monthIndex];
+    }
+
+    // Funktion zur Umwandlung des Monatsnamens in den Monatsindex
+    function getMonthIndex(monthName) {
+        let monthNames = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
+                          'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+        return monthNames.indexOf(monthName);
+    }
+
+    // Verbesserte Share-Funktion ohne PDF-Export
+    function shareEntries(method) {
+        let fromDate = document.getElementById('fromDate').value;
+        let toDate = document.getElementById('toDate').value;
+
+        let filteredEntries = timeEntries.filter(entry => {
+            let entryDate = new Date(entry.date);
+            if (fromDate && entryDate < new Date(fromDate)) {
+                return false;
+            }
+            if (toDate && entryDate > new Date(toDate)) {
+                return false;
+            }
+            return true;
+        });
+
+        if (filteredEntries.length === 0) {
+            alert('Keine Einträge im ausgewählten Zeitraum.');
+            return;
+        }
+
+        // Gesamtstundenzahl berechnen
+        let totalHours = filteredEntries.reduce((sum, entry) => sum + entry.workHours, 0).toFixed(2);
+
+        // Zeitraum festlegen
+        let dateRange = `Zeitraum: ${fromDate || 'Anfang'} - ${toDate || 'Ende'}`;
+
+        // Erstellen der Nachricht mit besserer Formatierung
+        let messageLines = [];
+        messageLines.push('Arbeitszeiterfassung');
+        messageLines.push(dateRange);
+        messageLines.push(`Gesamtarbeitszeit: ${totalHours} Std`);
+        messageLines.push('');
+        messageLines.push('Datum       | Von    | Bis    | Pause | Arbeitszeit');
+        messageLines.push('-----------------------------------------------');
+        filteredEntries.forEach(entry => {
+            let line = `${entry.date} | ${entry.startTime} | ${entry.endTime} | ${entry.breakTime} Min | ${entry.workHours.toFixed(2)} Std`;
+            messageLines.push(line);
+        });
+        let message = messageLines.join('\n');
+
+        if (method === 'email') {
+            // E-Mail-Link erstellen
+            let subject = encodeURIComponent('Arbeitszeiterfassung');
+            let body = encodeURIComponent(message);
+            let mailtoLink = `mailto:?subject=${subject}&body=${body}`;
+            window.location.href = mailtoLink;
+        } else if (method === 'whatsapp') {
+            // WhatsApp-Link erstellen
+            let whatsappLink = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
+            window.location.href = whatsappLink;
+        } else {
+            alert('Ungültige Auswahl.');
+        }
+    }
+
+</script>
+
+</body>
+</html>
