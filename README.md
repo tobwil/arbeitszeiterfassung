@@ -84,4 +84,4 @@ Ein einfaches und benutzerfreundliches Arbeitszeiterfassungstool für den Browse
 
 ## 🌐 Live-Demo
 
-Probieren Sie das Tool hier aus:
+Probieren Sie das Tool hier aus: https://tobwil.github.io/arbeitszeiterfassung/
